@@ -46,6 +46,13 @@ trait TransformableImage
     private $height;
 
     /**
+     * Indicates if the image is orientable.
+     *
+     * @var bool
+     */
+    private $orientable = false;
+
+    /**
      * The Intervention Image instance.
      *
      * @var \Intervention\Image\Image
@@ -110,6 +117,22 @@ trait TransformableImage
     }
 
     /**
+     * Specify if the underlying image should be orientated.
+     *
+     * @return $this
+     */
+    public function orientable()
+    {
+        if (!extension_loaded('exif')) {
+            throw new \Exception('The PHP exif extension must be enabled to use the orientable method.');
+        }
+
+        $this->orientable = true;
+
+        return $this;
+    }
+
+    /**
      * Transform the uploaded file.
      *
      * @param \Illuminate\Http\UploadedFile $uploadedFile
@@ -124,6 +147,10 @@ trait TransformableImage
         }
 
         $this->image = Image::make($uploadedFile->getPathName());
+
+        if ($this->orientable) {
+            $this->orientateImage();
+        }
 
         if ($this->croppable && $cropperData) {
             $this->cropImage($cropperData);
@@ -147,6 +174,16 @@ trait TransformableImage
     private function cropImage(object $cropperData)
     {
         $this->image->crop($cropperData->width, $cropperData->height, $cropperData->x, $cropperData->y);
+    }
+
+    /**
+     * Orientate the image.
+     *
+     * @return void
+     */
+    private function orientateImage()
+    {
+        $this->image->orientate();
     }
 
     /**
